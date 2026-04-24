@@ -60,6 +60,7 @@ function generateSlots(start, end) {
         youtubeTitle: '', publishedAt: null,
         youtubeId: '', lastViewUpdate: null,
         hasThumbnail: false,
+        telegramPosted: false,
       });
     }
     d.setDate(d.getDate() + 1);
@@ -830,7 +831,7 @@ function PlanningView({ videos, updateVideo, thumbs, setVideoThumbnail }) {
         overflow:'hidden',
       }}>
         <div style={{
-          display:'grid', gridTemplateColumns:'120px 1fr 150px 64px 110px 110px 70px 24px',
+          display:'grid', gridTemplateColumns:'120px 1fr 150px 64px 110px 110px 60px 70px 24px',
           padding:'10px 14px', borderBottom:`1px solid ${C.line}`,
           fontSize:10, letterSpacing:'0.1em', textTransform:'uppercase',
           color:C.muted2, gap:14,
@@ -842,6 +843,7 @@ function PlanningView({ videos, updateVideo, thumbs, setVideoThumbnail }) {
           <div>Miniature</div>
           <div>Rushes</div>
           <div>Vidéo finale</div>
+          <div style={{ textAlign:'center' }}>TG</div>
           <div style={{ textAlign:'right' }}>Vues</div>
           <div />
         </div>
@@ -877,7 +879,7 @@ function Row({ video, expanded, onToggle, onUpdate, thumb, setThumbnail }) {
   return (
     <div className="row" style={{ borderBottom:`1px solid ${C.line}` }}>
       <div style={{
-        display:'grid', gridTemplateColumns:'120px 1fr 150px 64px 110px 110px 70px 24px',
+        display:'grid', gridTemplateColumns:'120px 1fr 150px 64px 110px 110px 60px 70px 24px',
         padding:'10px 14px', alignItems:'center', gap:14,
       }}>
         <div className="mono" style={{ fontSize:12 }}>{formatDate(video.date)}</div>
@@ -905,6 +907,13 @@ function Row({ video, expanded, onToggle, onUpdate, thumb, setThumbnail }) {
 
         <LinkCell value={video.rushLink} onChange={v => onUpdate({ rushLink:v })} />
         <LinkCell value={video.finalLink} onChange={v => onUpdate({ finalLink:v })} />
+
+        <div style={{ display:'flex', justifyContent:'center' }}>
+          <TelegramCheck
+            checked={!!video.telegramPosted}
+            onChange={val => onUpdate({ telegramPosted: val })}
+          />
+        </div>
 
         <div className="mono" style={{
           textAlign:'right', fontSize:12,
@@ -1011,6 +1020,34 @@ function InlineInput({ value, onChange, placeholder, muted }) {
         color: muted ? C.muted : C.text, fontSize:13, width:'100%',
       }}
     />
+  );
+}
+
+function TelegramCheck({ checked, onChange, label }) {
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onChange(!checked); }}
+      title={checked ? 'Post Telegram publié' : 'Pas encore posté sur Telegram'}
+      style={{
+        display:'inline-flex', alignItems:'center', justifyContent:'center',
+        gap: label ? 8 : 0,
+        padding: label ? '6px 10px' : 0,
+        width: label ? 'auto' : 22, height: label ? 'auto' : 22,
+        background: checked ? 'rgba(0, 212, 255, 0.12)' : 'transparent',
+        border: `1.5px solid ${checked ? C.cyan : C.line}`,
+        borderRadius: 6, cursor:'pointer',
+        color: checked ? C.cyan : C.muted2,
+        transition: 'all 0.12s',
+      }}>
+      {checked ? (
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <span style={{ width:11, height:11 }} />
+      )}
+      {label && <span style={{ fontSize:13, fontWeight:500 }}>{label}</span>}
+    </button>
   );
 }
 
@@ -1238,6 +1275,13 @@ function Detail({ video, onUpdate, onClose, thumb, setThumbnail }) {
         <Field label="Rushes"><input value={video.rushLink} onChange={e => onUpdate({ rushLink:e.target.value })} placeholder="URL" style={fieldInput()} /></Field>
         <Field label="Vidéo finale"><input value={video.finalLink} onChange={e => onUpdate({ finalLink:e.target.value })} placeholder="URL YouTube" style={fieldInput()} /></Field>
         <Field label="Notes"><textarea value={video.notes||''} onChange={e => onUpdate({ notes:e.target.value })} rows={3} style={{ ...fieldInput(), resize:'vertical' }} /></Field>
+        <Field label="Post Telegram">
+          <TelegramCheck
+            checked={!!video.telegramPosted}
+            onChange={val => onUpdate({ telegramPosted: val })}
+            label={video.telegramPosted ? 'Publié sur Telegram' : 'Pas encore publié'}
+          />
+        </Field>
         {(video.views > 0 || video.likes > 0 || video.duration) && (
           <div style={{ paddingTop:14, borderTop:`1px solid ${C.line}` }}>
             <div style={{ fontSize:10, letterSpacing:'0.12em', textTransform:'uppercase', color:C.muted2, marginBottom:10 }}>Stats YouTube</div>
@@ -1351,7 +1395,7 @@ Français, markdown, direct, 400 mots max.`;
       const res = await fetch("/.netlify/functions/claude", {
         method:"POST", headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          model:"claude-sonnet-4-6", max_tokens:1200,
+          model:"claude-sonnet-4-5", max_tokens:1200,
           messages:[{ role:"user", content:prompt }]
         })
       });
@@ -1625,3 +1669,4 @@ function Settings({ settings, setSettings, onClose, videos, setVideos }) {
     </div>
   );
 }
+
